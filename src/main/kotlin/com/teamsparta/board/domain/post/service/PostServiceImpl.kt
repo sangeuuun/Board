@@ -2,6 +2,7 @@ package com.teamsparta.board.domain.post.service
 
 import com.teamsparta.board.domain.likes.service.LikesService
 import com.teamsparta.board.domain.member.repository.MemberRepository
+import com.teamsparta.board.domain.post.dto.PageResponse
 import com.teamsparta.board.domain.post.dto.PostRequest
 import com.teamsparta.board.domain.post.dto.PostResponse
 import com.teamsparta.board.domain.post.dto.toEntity
@@ -9,8 +10,7 @@ import com.teamsparta.board.domain.post.repository.PostRepository
 import com.teamsparta.board.exception.ModelNotFoundException
 import com.teamsparta.board.exception.UnauthorizedException
 import com.teamsparta.board.infra.s3.S3Service
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.*
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,8 +23,13 @@ class PostServiceImpl(
     private val s3Service: S3Service,
     private val likesService: LikesService
 ): PostService {
-    override fun getPostList(pageable: Pageable): Page<PostResponse> {
-        TODO("Not yet implemented")
+    override fun getPostList(page: Int, size: Int, sortBy: String, direction: String): PageResponse<PostResponse> {
+        val direction = getDirection(direction)
+        val pageable: Pageable = PageRequest.of(page, size, direction, sortBy)
+
+        val pageContent = postRepository.findByPageable(pageable)
+
+        return PageResponse(pageContent.content.map {PostResponse.from(it)}, page, size)
     }
 
     override fun getPostById(postId: Long): PostResponse {
@@ -73,5 +78,10 @@ class PostServiceImpl(
         val post = postRepository.findByIdOrNull(postId) ?: throw ModelNotFoundException("없는 게시글입니다.")
 
         likesService.update(memberId, post)
+    }
+
+    private fun getDirection(sort: String) = when (sort) {
+        "asc" -> Sort.Direction.ASC
+        else -> Sort.Direction.DESC
     }
 }

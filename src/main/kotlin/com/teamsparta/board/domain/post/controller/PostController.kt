@@ -1,12 +1,15 @@
 package com.teamsparta.board.domain.post.controller
 
+import com.teamsparta.board.domain.post.dto.PageResponse
 import com.teamsparta.board.domain.post.dto.PostRequest
 import com.teamsparta.board.domain.post.dto.PostResponse
 import com.teamsparta.board.domain.post.service.PostService
 import com.teamsparta.board.infra.security.UserPrincipal
 import jakarta.validation.Valid
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -22,11 +25,14 @@ class PostController(
 
     @GetMapping
     fun getPostList(
-        @PageableDefault pageable: Pageable
-    ): ResponseEntity<Page<PostResponse>> {
+        @RequestParam("page", defaultValue = "0") page: Int,
+        @RequestParam("size", defaultValue = "10") size: Int,
+        @RequestParam("sort_by", defaultValue = "createdAt") sortBy: String,
+        @RequestParam("sort_direction", defaultValue = "desc") direction: String,
+    ): ResponseEntity<PageResponse<PostResponse>> {
         return ResponseEntity
             .status(HttpStatus.OK)
-            .body(postService.getPostList(pageable))
+            .body(postService.getPostList(page, size, sortBy, direction))
     }
 
     @GetMapping("/{postId}")
